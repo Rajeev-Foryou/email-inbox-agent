@@ -1,0 +1,30 @@
+generator client {
+  provider = "prisma-client-js"
+   engineType = "binary"
+}
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Email {
+  id              String    @id @default(uuid())
+  messageId       String    @unique
+  imapUid         Int?
+  imapMailbox     String    @default("INBOX")
+  from            String
+  to              String
+  subject         String
+  body            String
+  date            DateTime
+  labels          String[]
+  priority        String
+  suggestedAction String
+  processedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([imapMailbox, imapUid], name: "email_imap_unique")
+  @@index([processedAt])
+  @@index([imapMailbox, imapUid])
+}
