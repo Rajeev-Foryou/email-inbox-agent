@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "tsx src/main.ts",
     "build": "tsc",
-    "start": "node dist/src/main.js",
+       "start": "node dist/scripts/seedDemoData.js && node dist/main.js",
     "seed": "tsx src/scripts/seedDemoData.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
