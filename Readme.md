@@ -278,25 +278,59 @@ GitHub Actions workflow (`.github/workflows/ci.yml`):
 
 ### Production Checklist
 
-1. **Environment Variables** - Set all required env vars
-2. **Database Migrations** - Run `npm run prisma:deploy`
-3. **Agent Provider** - Set `AGENT_PROVIDER=groq` with valid API key
-4. **Logging** - Set `NODE_ENV=production` for JSON logs
-5. **Process Manager** - Use PM2 or systemd for auto-restart
-6. **Monitoring** - Scrape `/metrics` endpoint with Prometheus
-7. **Alerting** - Monitor `/alerts` or integrate custom handlers
+✅ **Required Steps Before Production:**
+
+1. ✅ **Environment Variables** - Set all required env vars (see `.env.example`)
+2. ✅ **Database Migrations** - Automatically run on startup via `prisma migrate deploy`
+3. ✅ **Agent Provider** - Set `AGENT_PROVIDER=groq` with valid API key
+4. ✅ **Logging** - Set `NODE_ENV=production` for JSON logs
+5. ✅ **Process Manager** - Use PM2 or systemd for auto-restart
+6. ⚠️ **Monitoring** - Scrape `/metrics` endpoint with Prometheus
+7. ⚠️ **Alerting** - Monitor `/alerts` or integrate custom handlers
+
+### Production Deployment Features
+
+✅ **Automatic Database Migration** - Application runs `prisma migrate deploy` on startup  
+✅ **IMAP Connection Cleanup** - Connections properly closed after each ingestion cycle  
+✅ **Idempotency** - Duplicate emails prevented via UID + messageId constraints  
+✅ **Error Recovery** - Scheduler continues on failures, alerts on consecutive errors  
+✅ **Backpressure** - Max 100 emails processed per run to prevent overload  
+✅ **Email Body Truncation** - Bodies limited to 10,000 chars to prevent DB bloat  
+✅ **Graceful Shutdown** - SIGTERM/SIGINT handlers for clean process termination
+
+### Critical Production Notes
+
+⚠️ **IMAP Connection Limits:**  
+Gmail allows ~15 concurrent IMAP connections per account. The app uses 1 connection per ingestion cycle (every 5 minutes by default).
+
+⚠️ **First Deployment:**  
+On fresh deployments, the app automatically runs database migrations. Ensure `DATABASE_URL` is accessible and database exists.
+
+⚠️ **Gmail App Passwords:**  
+Regular Gmail passwords will NOT work. Generate app-specific password at: https://myaccount.google.com/apppasswords
+
+⚠️ **Metrics Persistence:**  
+Metrics are in-memory and reset on restart. For production monitoring, scrape `/metrics` endpoint regularly.
+
+⚠️ **Error Alerting:**  
+Built-in alerts log to console by default. For production, add webhook handlers in `src/utils/alerting.ts`.
 
 ### Process Manager (PM2)
+
+Use the included `ecosystem.config.js`:
 
 ```bash
 # Install PM2
 npm install -g pm2
 
-# Start application
-pm2 start npm --name "email-agent" -- start
+# Build application
+npm run build
+
+# Start with PM2 config
+pm2 start ecosystem.config.js --env production
 
 # View logs
-pm2 logs email-agent
+pm2 logs email-inbox-agent
 
 # Monitor
 pm2 monit

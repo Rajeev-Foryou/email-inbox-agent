@@ -81,4 +81,6 @@ export const ALERTS = {
   DB_CONNECTION_FAILED: 'db_connection_failed',
   IMAP_CONNECTION_FAILED: 'imap_connection_failed',
   DUPLICATE_THRESHOLD: 'duplicate_threshold_exceeded',
+  INGESTION_FAILURE: 'ingestion_failure',
+  INGESTION_CONSECUTIVE_FAILURES: 'ingestion_consecutive_failures',
 };
