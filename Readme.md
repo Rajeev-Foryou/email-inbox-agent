@@ -1,113 +1,513 @@
-# Email Inbox Agent
+# Email Inbox Agent 🤖📧
 
-AI-powered email inbox classification and labeling system that automatically processes Gmail messages, categorizes them using AI, and stores structured metadata for intelligent email management.
+> **AI-powered email classification system** that automatically processes your Gmail inbox, categorizes emails using AI, and provides intelligent insights through a REST API.
 
-## Overview
+[![CI](https://github.com/Rajeev-Foryou/email-inbox-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/Rajeev-Foryou/email-inbox-agent/actions)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)](https://www.typescriptlang.org/)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-The Email Inbox Agent connects to Gmail via IMAP, fetches unread emails, classifies them using AI (Groq/OpenAI-compatible API), and persists labeled results to PostgreSQL. It runs on a configurable schedule with built-in retry logic, idempotency, metrics, and alerting.
+## 📋 Table of Contents
 
-**Key Features:**
+- [Overview](#overview)
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Demo](#demo)
+- [Setup Guide](#setup-guide)
+- [API Documentation](#api-documentation)
+- [Deployment](#deployment)
+- [Development](#development)
 
-- 📧 **IMAP Email Fetching** - Safe, non-destructive email retrieval (marks as seen only after successful processing)
-- 🤖 **AI Classification** - Groq/OpenAI-compatible API for intelligent email categorization
-- 🗄️ **PostgreSQL Persistence** - Structured storage with Prisma ORM
-- ♻️ **Idempotency** - UID-based duplicate prevention with unique constraints
-- 🔄 **Retry Logic** - Exponential backoff for transient failures
-- 📊 **Observability** - Structured logging (Pino), metrics, and alerting
-- ⏰ **Scheduled Processing** - Cron-based ingestion (default: every 5 minutes)
-- 🧪 **Test Coverage** - Unit and integration tests with Jest
-- 🚀 **CI/CD** - GitHub Actions workflow with PostgreSQL service
+---
 
-## Architecture
+## 🎯 Overview
 
+Email Inbox Agent is an automated email management system that:
+
+- **Connects to Gmail** via IMAP every 5 minutes
+- **Classifies emails** using Groq's AI (llama-3.3-70b-versatile)
+- **Extracts metadata**: labels, priority, suggested actions
+- **Stores in PostgreSQL** for querying and analysis
+- **Exposes REST API** for integration with other tools
+
+**Perfect for:** Portfolio projects, email automation, AI integration demos, production email management
+
+---
+
+## ✨ Features
+
+### Core Functionality
+
+- ✅ **Automated Email Processing** - Cron-based IMAP fetching (configurable interval)
+- 🤖 **AI Classification** - Groq/OpenAI-compatible LLM integration
+- 🏷️ **Smart Labeling** - Urgent, meeting, invoice, task, spam, etc.
+- 📊 **Priority Detection** - High/Medium/Low priority assignment
+- 💡 **Action Suggestions** - "respond immediately", "archive", "forward to finance"
+- 🔄 **Idempotency** - Duplicate detection via UID and messageId
+- 📈 **Metrics & Monitoring** - Real-time performance tracking
+- 🔔 **Alerting System** - Configurable thresholds for errors and duplicates
+
+### Production-Ready
+
+- 🐳 **Docker Support** - Multi-stage builds with health checks
+- 🚀 **CI/CD Pipeline** - GitHub Actions with automated testing
+- 📝 **Structured Logging** - JSON logs with Pino
+- 🔒 **Security** - Rate limiting, PII protection, App Password auth
+- ♻️ **Retry Logic** - Exponential backoff for transient failures
+- 🧪 **Test Coverage** - 28%+ branch coverage with Jest
+
+---
+
+## 🛠️ Tech Stack
+
+| Category          | Technologies                        |
+| ----------------- | ----------------------------------- |
+| **Language**      | TypeScript 5.3, Node.js 20+         |
+| **Framework**     | Fastify 4.27 (REST API)             |
+| **Database**      | PostgreSQL 15+, Prisma ORM 6.19     |
+| **AI/ML**         | Groq API (llama-3.3-70b-versatile)  |
+| **Email**         | node-imap 0.9.6, mailparser 3.9.3   |
+| **Scheduler**     | node-cron 4.2.1                     |
+| **Observability** | Pino 10.3 (logging), custom metrics |
+| **Testing**       | Jest 29, ts-jest                    |
+| **DevOps**        | Docker, PM2, GitHub Actions, Render |
+
+---
+
+## 🎬 Demo
+
+**Live API:** https://email-inbox-agent.onrender.com
+
+### Try These Endpoints:
+
+```bash
+# Health check
+curl https://email-inbox-agent.onrender.com/health
+
+# Get all classified emails
+curl https://email-inbox-agent.onrender.com/emails
+
+# Filter by priority
+curl https://email-inbox-agent.onrender.com/emails?priority=High
+
+# Filter by labels
+curl https://email-inbox-agent.onrender.com/emails?labels=urgent
+
+# View metrics
+curl https://email-inbox-agent.onrender.com/metrics
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                         main.ts                              │
-│  (Bootstrap: loadConfig → startServer → startScheduler)      │
-└─────────────────────────────────────────────────────────────┘
-                            │
-        ┌───────────────────┼───────────────────┐
-        ▼                   ▼                   ▼
-┌──────────────┐  ┌──────────────────┐  ┌─────────────────┐
-│ API Server   │  │ Email Scheduler  │  │ Email Service   │
-│ (Fastify)    │  │ (node-cron)      │  │ (Orchestration) │
-└──────────────┘  └──────────────────┘  └─────────────────┘
-                                               │
-                        ┌──────────────────────┼──────────────────┐
-                        ▼                      ▼                  ▼
-                 ┌─────────────┐       ┌─────────────┐   ┌──────────────┐
-                 │ EmailClient │       │ AI Agent    │   │ EmailRepo    │
-                 │ (IMAP)      │       │ (Groq/Stub) │   │ (Prisma)     │
-                 └─────────────┘       └─────────────┘   └──────────────┘
+
+---
+
+## 🚀 Setup Guide
+
+### Prerequisites
+
+Before starting, ensure you have:
+
+- ✅ **Node.js 20+** installed ([Download](https://nodejs.org/))
+- ✅ **PostgreSQL 15+** running locally or remotely
+- ✅ **Gmail account** with IMAP enabled
+- ✅ **Groq API key** (free at [console.groq.com](https://console.groq.com))
+
+### Step 1: Clone Repository
+
+```bash
+git clone https://github.com/Rajeev-Foryou/email-inbox-agent.git
+cd email-inbox-agent
 ```
 
-## Prerequisites
-
-- **Node.js** 20+ (ESM support required)
-- **PostgreSQL** 15+
-- **Gmail Account** with IMAP enabled
-- **Groq API Key** (or OpenAI-compatible API)
-- **App Password** for Gmail (2FA required)
-
-## Quick Start
-
-### 1. Installation
+### Step 2: Install Dependencies
 
 ```bash
 npm install
 ```
 
-### 2. Environment Setup
+### Step 3: Configure Gmail App Password
 
-Create `.env` file in project root:
+1. **Enable 2-Factor Authentication** on your Google Account
+2. Go to [Google App Passwords](https://myaccount.google.com/apppasswords)
+3. Create a new app password for "Mail"
+4. Copy the 16-character password (remove spaces)
+
+### Step 4: Get Groq API Key
+
+1. Sign up at [console.groq.com](https://console.groq.com) (free tier available)
+2. Create a new API key
+3. Copy the key (starts with `gsk_`)
+
+### Step 5: Environment Configuration
+
+Create `.env` file in the project root:
 
 ```env
-# Database
+# Database Configuration
 DATABASE_URL="postgresql://user:password@localhost:5432/email_inbox_agent"
 
-# Gmail IMAP
+# Gmail IMAP Settings
 IMAP_HOST=imap.gmail.com
 IMAP_PORT=993
 IMAP_USER=your-email@gmail.com
-IMAP_PASSWORD=your-app-password  # Generate at https://myaccount.google.com/apppasswords
+IMAP_PASSWORD=abcdefghijklmnop  # Gmail App Password (16 chars, no spaces)
 
-# AI Provider
-AGENT_PROVIDER=groq  # Options: groq, stub
-GROQ_API_KEY=your-groq-api-key
+# AI Configuration
+AGENT_TYPE=groq
+GROQ_API_KEY=gsk_your_groq_api_key_here
 GROQ_MODEL=llama-3.3-70b-versatile
+GROQ_BASE_URL=https://api.groq.com/openai/v1
 
-# Server
+# Application Settings
+NODE_ENV=development
 PORT=3000
-NODE_ENV=development  # Options: development, production
+LOG_LEVEL=info
+INGESTION_CRON_SCHEDULE=*/5 * * * *  # Every 5 minutes
 ```
 
-### 3. Database Setup
+### Step 6: Database Setup
 
 ```bash
-# Generate Prisma client
-npm run prisma:generate
+# Create database
+createdb email_inbox_agent
 
 # Run migrations
 npm run prisma:migrate
 
-# Or for production (no prompts)
-npm run prisma:deploy
+# Generate Prisma client
+npm run prisma:generate
 ```
 
-### 4. Run Application
+### Step 7: Seed Demo Data (Optional)
 
-**Development Mode:**
+```bash
+npm run seed
+```
+
+This adds 6 sample classified emails for testing.
+
+### Step 8: Start Application
+
+**Development mode (with hot reload):**
 
 ```bash
 npm run dev
 ```
+
+**Production mode:**
+
+```bash
+npm run build
+npm start
+```
+
+### Step 9: Verify Installation
+
+```bash
+# Health check
+curl http://localhost:3000/health
+
+# View emails
+curl http://localhost:3000/emails
+
+# Check metrics
+curl http://localhost:3000/metrics
+```
+
+---
+
+## 📚 API Documentation
+
+### Base URL
+
+- **Local:** `http://localhost:3000`
+- **Production:** `https://email-inbox-agent.onrender.com`
+
+### Endpoints
+
+#### `GET /health`
+
+Health check endpoint
+
+**Response:**
+
+```json
+{
+  "status": "ok",
+  "timestamp": "2026-02-04T10:30:00.000Z"
+}
+```
+
+---
+
+#### `GET /emails`
+
+Retrieve all classified emails
+
+**Query Parameters:**
+
+- `priority` (optional): Filter by priority (`High`, `Medium`, `Low`)
+- `labels` (optional): Filter by label (comma-separated)
+- `skip` (optional): Pagination offset (default: 0)
+- `take` (optional): Number of results (default: 50, max: 100)
+
+**Example Requests:**
+
+```bash
+# All emails
+GET /emails
+
+# High priority only
+GET /emails?priority=High
+
+# Urgent emails
+GET /emails?labels=urgent
+
+# Pagination
+GET /emails?skip=10&take=20
+```
+
+**Response:**
+
+```json
+[
+  {
+    "id": "cm5abc123...",
+    "messageId": "demo-urgent-1@example.com",
+    "subject": "URGENT: Production Server Down",
+    "from": "devops@company.com",
+    "to": "you@gmail.com",
+    "body": "Critical alert...",
+    "date": "2026-02-04T10:00:00Z",
+    "labels": ["urgent", "infrastructure"],
+    "priority": "High",
+    "suggestedAction": "respond immediately",
+    "processedAt": "2026-02-04T10:01:00Z",
+    "createdAt": "2026-02-04T10:01:00Z"
+  }
+]
+```
+
+---
+
+#### `GET /emails/:id`
+
+Get specific email by ID
+
+**Response:**
+
+```json
+{
+  "id": "cm5abc123...",
+  "subject": "...",
+  ...
+}
+```
+
+---
+
+#### `GET /metrics`
+
+System performance metrics
+
+**Response:**
+
+```json
+{
+  "counters": {
+    "emails_fetched": 1250,
+    "emails_processed": 1198,
+    "emails_failed": 12,
+    "emails_duplicate": 40
+  },
+  "histograms": {
+    "ingestion_duration_ms": { "p50": 2340, "p95": 4500 },
+    "classification_duration_ms": { "p50": 450, "p95": 890 }
+  }
+}
+```
+
+---
+
+#### `GET /alerts`
+
+Recent system alerts
+
+**Response:**
+
+```json
+{
+  "alerts": [
+    {
+      "id": "alert_123",
+      "severity": "warning",
+      "message": "High number of duplicate emails",
+      "metadata": { "count": 15 },
+      "timestamp": "2026-02-04T10:30:00Z"
+    }
+  ]
+}
+```
+
+---
+
+## 🌐 Deployment
+
+### Option 1: Render (Recommended - Free Tier)
+
+1. **Create PostgreSQL Database:**
+   - Go to [render.com](https://render.com) → New PostgreSQL
+   - Copy the "Internal Database URL"
+
+2. **Create Web Service:**
+   - Connect your GitHub repo
+   - Runtime: Docker (auto-detected)
+   - Branch: `main`
+
+3. **Set Environment Variables:**
+
+   ```
+   DATABASE_URL=<paste from step 1>
+   IMAP_USER=your-email@gmail.com
+   IMAP_PASSWORD=<gmail app password>
+   GROQ_API_KEY=<your groq key>
+   NODE_ENV=production
+   ```
+
+4. **Deploy:** Render auto-deploys from GitHub
+
+**Deployment Guide:** [Full Render Setup](docs/DEPLOYMENT.md)
+
+---
+
+### Option 2: Docker
+
+```bash
+# Build image
+docker build -t email-inbox-agent .
+
+# Run container
+docker run -d \
+  --name email-agent \
+  --env-file .env \
+  -p 3000:3000 \
+  email-inbox-agent
+```
+
+---
+
+### Option 3: PM2 (VPS/Cloud)
+
+```bash
+# Build
+npm run build
+
+# Start with PM2
+pm2 start ecosystem.config.js
+pm2 save
+pm2 startup
+```
+
+---
+
+## 🧑‍💻 Development
+
+### Project Structure
+
+```
+email-inbox-agent/
+├── src/
+│   ├── agents/          # AI classification (Groq, Stub)
+│   ├── api/             # REST API routes (Fastify)
+│   ├── config/          # Environment validation
+│   ├── db/              # Database (Prisma, migrations)
+│   ├── email/           # IMAP client
+│   ├── scripts/         # Utility scripts
+│   ├── services/        # Business logic
+│   ├── types/           # TypeScript types
+│   ├── utils/           # Logging, metrics, retry
+│   └── main.ts          # Application entry point
+├── prisma/
+│   ├── schema.prisma    # Database schema
+│   └── migrations/      # SQL migrations
+├── tests/               # Jest unit tests
+├── Dockerfile           # Multi-stage Docker build
+├── .env.example         # Environment template
+└── package.json
+```
+
+### Available Scripts
+
+```bash
+npm run dev              # Start dev server (hot reload)
+npm run build            # Compile TypeScript
+npm start                # Run production build
+npm run seed             # Seed demo data
+npm test                 # Run tests
+npm run test:coverage    # Test with coverage
+npm run lint             # Run ESLint
+npm run prisma:migrate   # Create migration
+npm run prisma:deploy    # Apply migrations
+```
+
+### Running Tests
+
+```bash
+# All tests
+npm test
+
+# With coverage
+npm run test:coverage
+
+# Watch mode
+npm run test:watch
+```
+
+---
+
+## 🤝 Contributing
+
+Contributions welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+---
+
+## 📝 License
+
+MIT License - see [LICENSE](LICENSE) file for details
+
+---
+
+## 🙏 Acknowledgments
+
+- [Groq](https://groq.com) - Ultra-fast LLM inference
+- [Fastify](https://fastify.io) - High-performance web framework
+- [Prisma](https://prisma.io) - Next-generation ORM
+
+---
+
+## 📧 Contact
+
+**Rajeev Kumar**
+
+- GitHub: [@Rajeev-Foryou](https://github.com/Rajeev-Foryou)
+- Project: [email-inbox-agent](https://github.com/Rajeev-Foryou/email-inbox-agent)
+
+---
+
+**⭐ If this project helped you, please star it on GitHub!**bash
+npm run dev
+
+````
 
 **Production Mode:**
 
 ```bash
 npm run build
 npm start
-```
+````
 
 ## Environment Variables
 
