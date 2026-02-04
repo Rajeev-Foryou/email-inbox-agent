@@ -1,6 +1,6 @@
 // src/scripts/testImap.ts
-import { loadConfig } from '..\/config\/env.js';
-import { EmailClient } from '..\/email\/emailClient.js';
+import { loadConfig } from '../config/env.js';
+import { EmailClient } from '../email/emailClient.js';
 
 loadConfig(); // <--- ensure .env is loaded before anything else
 
