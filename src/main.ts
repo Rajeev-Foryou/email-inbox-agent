@@ -1,6 +1,7 @@
 import { loadConfig, validateEnv } from './config/env.js';
 import { startServer } from './api/server.js';
 import { prisma } from './db/prisma.js';
+import { runMigrations } from './db/migrate.js';
 import { logger } from './utils/logger.js';
 
 let fastify: any = null;
@@ -9,6 +10,24 @@ let schedulerControl: any = null;
 async function bootstrap() {
   loadConfig();
   validateEnv();
+  
+  // Run database migrations before starting services
+  try {
+    await runMigrations();
+  } catch (err) {
+    logger.fatal({ err }, 'Failed to run database migrations');
+    process.exit(1);
+  }
+  
+  // Explicitly connect to database and verify connection
+  try {
+    await prisma.$connect();
+    logger.info('Database connected successfully');
+  } catch (err) {
+    logger.fatal({ err }, 'Failed to connect to database');
+    process.exit(1);
+  }
+  
   fastify = await startServer();
 
   // Start scheduler after config and server are initialized

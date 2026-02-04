@@ -1,0 +1,45 @@
+services:
+  # Background Worker - Runs email ingestion cron + API
+  - type: web
+    name: email-inbox-agent
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: node dist/main.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: LOG_LEVEL
+        value: info
+      - key: AGENT_TYPE
+        value: groq
+      - key: INGESTION_CRON_SCHEDULE
+        value: "*/5 * * * *"
+      - key: IMAP_HOST
+        value: imap.gmail.com
+      - key: IMAP_PORT
+        value: 993
+      - key: GROQ_BASE_URL
+        value: https://api.groq.com/openai/v1
+      - key: GROQ_MODEL
+        value: llama-3.3-70b-versatile
+      # Secrets - you'll add these in Render dashboard
+      - key: DATABASE_URL
+        fromDatabase:
+          name: email-agent-db
+          property: connectionString
+      - key: IMAP_USER
+        sync: false
+      - key: IMAP_PASSWORD
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+
+databases:
+  - name: email-agent-db
+    databaseName: email_inbox_agent
+    plan: free
+    ipAllowList: []

@@ -66,13 +66,13 @@ export class GroqAgent {
     if (typeof raw === 'string') {
       try {
         parsedJson = JSON.parse(raw);
-      } catch (e) {
+      } catch (_e) {
         // Try to extract JSON substring
         const match = raw.match(/\{[\s\S]*\}/);
         if (match) {
           try {
             parsedJson = JSON.parse(match[0]);
-          } catch (err) {
+          } catch (_err) {
             throw new Error('Failed to parse JSON from model response');
           }
         } else {
